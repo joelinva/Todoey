@@ -62,21 +62,25 @@ class TodoListViewController: UITableViewController {
 	//MARK: - Tableview Delegate Methods
 	override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
 		
-		//This code sets the opposite of the current state
-		//This single line of code repalces the long way of doing it below
-		
-		//todoItems[indexPath.row].done = !todoItems[indexPath.row].done
-		
-//		The order matters
-//		context.delete(itemArray[indexPath.row])
-//		itemArray.remove(at: indexPath.row)
-		
+		if let item = todoItems?[indexPath.row] {
+			do {
+				try realm.write {
+					
+					//realm.delete(item)
+					item.done = !item.done
+				}
+			} catch {
+				print("Error setting done status, \(error)")
+			}
+			
+			tableView.reloadData()
+			
+		}
 		
 		tableView.deselectRow(at: indexPath, animated: true)
 		
 	}
-    
-    
+	
     //MARK: - Add New Items Section
    
 	@IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
@@ -94,6 +98,7 @@ class TodoListViewController: UITableViewController {
 					try self.realm.write {
 						let newItem = Item()
 						newItem.title = textField.text!
+						newItem.dateCreated = Date()
 						currentCategory.items.append(newItem)
 					}
 				} catch {
@@ -113,7 +118,6 @@ class TodoListViewController: UITableViewController {
 		
 		present(alert, animated: true, completion: nil)
 		
-		
 	}
     
 	
@@ -124,39 +128,54 @@ class TodoListViewController: UITableViewController {
 
 		todoItems = selectedCategory?.items.sorted(byKeyPath: "title", ascending: true)
 
-		self.tableView.reloadData()
+		//self.tableView.reloadData()
 
 	}
 	
+    @IBOutlet weak var searchBar: UISearchBar!
+    
 }
+
 
 //MARK: - Search Bar Methods
 
-//extension TodoListViewController : UISearchBarDelegate {
-//
-//	func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-//
-//		let request : NSFetchRequest<Item> = Item.fetchRequest()
-//
-//		let predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!)
-//
-//		request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
-//
-//		loadItems(with: request, predicate: predicate)
-//
-//	}
-//
-//	func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-//		if searchBar.text?.count == 0 {
-//			loadItems()
-//
-//			DispatchQueue.main.async {
-//				searchBar.resignFirstResponder()
-//			}
-//
-//		}
-//	}
-//
-//
-//
-//}
+extension TodoListViewController : UISearchBarDelegate {
+	
+	func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+		
+		todoItems = todoItems?.filter("title CONTAINS[cd] %@", searchBar.text!).sorted(byKeyPath: "dateCreated", ascending: true)
+		self.tableView.reloadData()
+		
+	}
+	
+	func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+		
+		let char = searchText.cString(using: String.Encoding.utf8)
+		let isBackSpace = strcmp(char, "\\b")
+		
+		if searchBar.text?.count == 0 {
+			
+			loadItems()
+			self.tableView.reloadData()
+			DispatchQueue.main.async {
+				searchBar.resignFirstResponder()
+			}
+			
+		} else if isBackSpace == -92 {
+			
+			loadItems()
+			self.tableView.reloadData()
+			
+		} else {
+			
+			loadItems()
+			todoItems = todoItems?.filter("title CONTAINS[cd] %@", searchBar.text!).sorted(byKeyPath: "title", ascending: true)
+			self.tableView.reloadData()
+			
+		}
+		
+	}
+		
+}
+
+

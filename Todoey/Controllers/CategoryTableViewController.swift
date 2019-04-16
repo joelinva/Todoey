@@ -11,7 +11,7 @@ import RealmSwift
 
 class CategoryTableViewController: UITableViewController {
 
-    let realm = try! Realm()
+    lazy var realm = try! Realm()
     
     var categories : Results<Category>?
     
