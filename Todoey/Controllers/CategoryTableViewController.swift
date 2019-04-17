@@ -9,7 +9,8 @@
 import UIKit
 import RealmSwift
 
-class CategoryTableViewController: UITableViewController {
+
+class CategoryTableViewController: SwipeTableViewController {
 
     lazy var realm = try! Realm()
     
@@ -19,6 +20,8 @@ class CategoryTableViewController: UITableViewController {
         super.viewDidLoad()
         
         loadCategories()
+        
+        
     
     }
     
@@ -30,17 +33,17 @@ class CategoryTableViewController: UITableViewController {
         
     }
     
+    
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        
-        let cell = tableView.dequeueReusableCell(withIdentifier: "CategoryCell", for: indexPath)
+
+        let cell = super.tableView(tableView, cellForRowAt: indexPath)
         
         cell.textLabel?.text = categories?[indexPath.row].name ?? "No Categories Added Yet"
         
         return cell
-        
+
     }
-    
-    
+
     
     //MARK: - TableView Delegate Methods
     
@@ -59,7 +62,7 @@ class CategoryTableViewController: UITableViewController {
     }
     
     
-    //MARK: - Data Manipulation Methods
+    //MARK: - Model Manipulation Methods
     func save(category: Category) {
        
         do {
@@ -82,6 +85,20 @@ class CategoryTableViewController: UITableViewController {
         
     }
     
+    //MARK: - Delete Data When Swipe
+    
+    override func updateModel(at indexPath: IndexPath) {
+        if let deleteCategory = self.categories?[indexPath.row] {
+            do {
+                try self.realm.write {
+                    self.realm.delete(deleteCategory)
+                }
+            } catch {
+                print("Error deleting category, \(error)")
+            }
+            
+        }
+    }
     
     //MARK: - Add New Categories
     @IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
@@ -107,7 +124,5 @@ class CategoryTableViewController: UITableViewController {
         present(alert, animated: true, completion: nil)
         
     }
-    
-    
-    
+
 }

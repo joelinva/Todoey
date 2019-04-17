@@ -9,14 +9,17 @@
 import UIKit
 import RealmSwift
 
-class TodoListViewController: UITableViewController {
+class TodoListViewController: SwipeTableViewController {
 
 	var todoItems : Results<Item>?
 	var realm = try! Realm()
 	
 	var selectedCategory : Category? {
 		didSet {
+			
 			loadItems()
+			
+			
 		}
 	}
 	
@@ -25,14 +28,18 @@ class TodoListViewController: UITableViewController {
 		
     }
 
-	
 	//MARK: - Tableview Datasource Methods
 	
+	override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+		
+		return todoItems?.count ?? 1
+		
+	}
+
 	
-	//TODO: Declare cellForRowAtIndexPath here:
 	override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
 		
-		let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
+		let cell = super.tableView(tableView, cellForRowAt: indexPath)
 		
 		if let item = todoItems?[indexPath.row] {
 			
@@ -49,18 +56,10 @@ class TodoListViewController: UITableViewController {
 		return cell
 		
 	}
-	
-	
-	//TODO: Declare numberOfRowsInSection
-	override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-		
-		return todoItems?.count ?? 1
-		
-	}
-	
-	
+
 	//MARK: - Tableview Delegate Methods
 	override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+		
 		
 		if let item = todoItems?[indexPath.row] {
 			do {
@@ -81,7 +80,7 @@ class TodoListViewController: UITableViewController {
 		
 	}
 	
-    //MARK: - Add New Items Section
+    //MARK: - Add New Items (addButtonPressed)
    
 	@IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
 		
@@ -91,7 +90,6 @@ class TodoListViewController: UITableViewController {
 		let action = UIAlertAction(title: "Add Item", style: .default) { (action) in
 			
 			//What will  happen when the user clicks the add item on our UIAlert
-			
 			if let currentCategory = self.selectedCategory {
 				
 				do {
@@ -128,16 +126,27 @@ class TodoListViewController: UITableViewController {
 
 		todoItems = selectedCategory?.items.sorted(byKeyPath: "title", ascending: true)
 
-		//self.tableView.reloadData()
-
 	}
 	
-    @IBOutlet weak var searchBar: UISearchBar!
-    
+
+	//MARK: - Delete Data When Swipe
+	
+	override func updateModel(at indexPath: IndexPath) {
+		if let deleteItem = todoItems?[indexPath.row] {
+			do {
+				try self.realm.write {
+					self.realm.delete(deleteItem)
+				}
+			} catch {
+				print("Error deleting item, \(error)")
+			}
+			
+		}
+	}
+	
 }
 
-
-//MARK: - Search Bar Methods
+//MARK: - Search Bar Delegate Methods
 
 extension TodoListViewController : UISearchBarDelegate {
 	
