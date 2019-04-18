@@ -8,6 +8,7 @@
 
 import UIKit
 import RealmSwift
+import ChameleonFramework
 
 class TodoListViewController: SwipeTableViewController {
 
@@ -19,15 +20,55 @@ class TodoListViewController: SwipeTableViewController {
 			
 			loadItems()
 			
-			
 		}
 	}
 	
+
+	@IBOutlet weak var searchBar: UISearchBar!
+	
+	
 	override func viewDidLoad() {
-        super.viewDidLoad()
+		
+		super.viewDidLoad()
+		
+		tableView.separatorStyle = .none
 		
     }
 
+	//MARK: - SET VIEW APPEARANCE PROPERTIES (viewWillAppear)
+	
+	override func viewWillAppear(_ animated: Bool) {
+		
+		title = selectedCategory?.name
+		
+		guard let colorHex = selectedCategory?.cellColor else {fatalError("No Color Set")}
+		
+		updateNavBar(withHexCode: colorHex)
+		
+	}
+	
+	//MARK: - SET VIEW DISAPPEARANCE PROPERTIES (viewWillDisappear)
+	
+	override func viewWillDisappear(_ animated: Bool) {
+		
+		updateNavBar(withHexCode: "1D9BF6")
+		
+	}
+	
+	//MARK: - NavBar Setup Methods
+	
+	func updateNavBar(withHexCode colorHexCode:String) {
+	
+		guard let navBar = navigationController?.navigationBar else {fatalError("Navigation Controlloer Does Not Exist.")}
+		
+		guard let navBarColor = UIColor(hexString: colorHexCode) else {fatalError("No Color Set For Navigation Text Elements")}
+		
+		navBar.barTintColor = navBarColor
+		searchBar.barTintColor = navBarColor
+		navBar.tintColor = ContrastColorOf(navBarColor, returnFlat: true)
+		navBar.largeTitleTextAttributes = [NSAttributedString.Key.foregroundColor : ContrastColorOf(navBarColor, returnFlat: true)]
+		
+	}
 	//MARK: - Tableview Datasource Methods
 	
 	override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -44,6 +85,13 @@ class TodoListViewController: SwipeTableViewController {
 		if let item = todoItems?[indexPath.row] {
 			
 			cell.textLabel?.text = item.title
+			
+			if let color = UIColor(hexString: selectedCategory!.cellColor)?.darken(byPercentage: CGFloat(indexPath.row) / CGFloat(todoItems!.count)) {
+				
+				cell.backgroundColor = color
+				cell.textLabel?.textColor = ContrastColorOf(color, returnFlat: true)
+				
+			}
 			
 			//Ternary Operator =>
 			// value = condition ? valueIfTrue : valueIfFalse
@@ -98,6 +146,7 @@ class TodoListViewController: SwipeTableViewController {
 						newItem.title = textField.text!
 						newItem.dateCreated = Date()
 						currentCategory.items.append(newItem)
+					
 					}
 				} catch {
 					print("Error saving items, \(error)")
@@ -144,6 +193,9 @@ class TodoListViewController: SwipeTableViewController {
 		}
 	}
 	
+
+
+    
 }
 
 //MARK: - Search Bar Delegate Methods
